@@ -1,12 +1,12 @@
 import fs from 'fs';
 import readline from 'readline';
 import { Mutex, Semaphore } from 'async-mutex';
-import { AxiosRequestConfig, AxiosResponse, isAxiosError } from 'axios';
+import { isAxiosError } from 'axios';
 import { Base64Encode } from 'base64-stream';
 import addressparser from 'nodemailer/lib/addressparser';
 import { ConfidentialClientApplication } from '@azure/msal-node';
 import { Config } from './Config';
-import { axiosUploadRequest, graphUserUrl } from './Http';
+import { axiosRetryableRequest, graphUserUrl } from './Http';
 import { UnrecoverableError } from './Constants';
 import { MsalProxy } from './MsalProxy';
 
@@ -49,19 +49,24 @@ export class Mailer
             // Fetch an accesstoken if needed
             const token = await this.#aquireToken();
 
-            // Send the message
-            const readStream = fs.createReadStream(filePath);
+            // Send the message. Every attempt opens the file again, because a stream can only be read once
+            const url = graphUserUrl(sender, 'sendMail');
+            const readStreams: fs.ReadStream[] = [];
             try {
-                await this.#retryableRequest({
-                    method: 'post',
-                    url: graphUserUrl(sender, 'sendMail'),
-                    data: readStream.pipe(new Base64Encode()),
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'text/plain',
-                        'User-Agent': `SMPT2Graph/${VERSION}`,
-                    },
-                    proxy: Config.httpProxyConfig,
+                await axiosRetryableRequest(()=>{
+                    const readStream = fs.createReadStream(filePath);
+                    readStreams.push(readStream);
+                    return {
+                        method: 'post',
+                        url,
+                        data: readStream.pipe(new Base64Encode()),
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            'Content-Type': 'text/plain',
+                            'User-Agent': `SMPT2Graph/${VERSION}`,
+                        },
+                        proxy: Config.httpProxyConfig,
+                    };
                 });
             } catch(error: any) {
                 if(isAxiosError(error) && error.response?.data)
@@ -84,48 +89,10 @@ export class Mailer
                 else
                     throw error;
             } finally {
-                readStream.destroy();
+                for(const readStream of readStreams)
+                    readStream.destroy();
             }
         });
-    }
-
-    /** Automatically retry a request when it's being throttled by the Graph API */
-    static async #retryableRequest<RequestData = any, ResponseData = any>(request: AxiosRequestConfig<RequestData>): Promise<AxiosResponse<ResponseData, RequestData>>
-    {
-        const retryLimit = 3;
-        let retryCount = 0;
-        let wait = 200;
-
-        const retry = async (): Promise<AxiosResponse<ResponseData, RequestData>> =>
-        {
-            try {
-                return await axiosUploadRequest<RequestData, ResponseData>(request);
-            } catch(error) {
-                if(++retryCount > retryLimit) // We've reached our retry limit?
-                    throw error;
-                else if(isAxiosError(error) && (error.response?.status === 429 || error.response?.status === 503 || error.response?.status === 504)) // We got a retryable response?
-                {
-                    const retryAfter = error.response.headers['Retry-After'];
-                    if(retryAfter && !isNaN(retryAfter)) // We got throttled
-                        wait = parseInt(retryAfter) * 1000;
-                    else
-                        wait *= 2;
-
-                    await this.#sleep(wait);
-
-                    return retry();
-                }
-                else // Unknown error response, throw the error
-                    throw error;
-            }
-        };
-
-        return retry();
-    }
-
-    static #sleep(ms: number): Promise<void>
-    {
-        return new Promise(r=>setTimeout(r, ms));
     }
 
     /** Get sender address from EML/RFC822 data */
