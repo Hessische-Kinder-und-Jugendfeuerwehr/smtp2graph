@@ -36,15 +36,15 @@
     "@types/chai": "^4.3.11",
     "@types/chai-as-promised": "^7.1.8",
     "@types/mailparser": "^3.4.4",
-    "@types/mocha": "^10.0.6",
-    "@types/nodemailer": "^8.0.1",
+    "@types/mocha": "^10.0.10",
+    "@types/nodemailer": "^8.0.2",
     "@types/smtp-server": "^3.5.13",
     "@types/tar": "^6.1.11",
     "chai": "^4.4.1",
     "chai-as-promised": "^7.1.1",
     "dotenv": "^16.3.2",
     "mailparser": "^3.6.6",
-    "mocha": "^10.2.0",
+    "mocha": "^11.8.0",
     "rcedit": "^4.0.1",
     "tar": "^6.2.0",
     "ts-loader": "^9.5.1",
@@ -54,16 +54,16 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "@azure/msal-node": "^2.10.0",
-    "async-mutex": "^0.4.0",
-    "axios": "^1.18.1",
+    "@azure/msal-node": "^7.2.3",
+    "@zone-eu/mailsplit": "^5.4.31",
+    "async-mutex": "^0.5.0",
+    "axios": "^1.21.1",
     "base64-stream": "^1.0.0",
     "chokidar": "^3.5.3",
-    "mailsplit": "^5.4.0",
-    "nodemailer": "^9.0.3",
+    "nodemailer": "^10.6.0",
     "rate-limiter-flexible": "^4.0.0",
-    "smtp-server": "^3.19.2",
-    "winston": "^3.11.0",
-    "yaml": "^2.3.4"
+    "smtp-server": "^3.21.6",
+    "winston": "^3.19.0",
+    "yaml": "^2.9.1"
   }
 }
