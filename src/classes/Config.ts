@@ -1,11 +1,50 @@
 import fs from 'fs';
+import net from 'net';
 import { parse as parseYaml } from 'yaml';
-import IPCIDR from 'ip-cidr';
 import type { AxiosProxyConfig } from 'axios';
 
 // Set the working dir based on the --baseDir argument
 const baseDir = process.argv.find(arg=>arg.startsWith('--baseDir=') && arg.length > 10)?.substring(10);
 if(baseDir) process.chdir(baseDir);
+
+/** Turn an IPv4-mapped IPv6 address (`::ffff:192.0.2.1`, used on dual-stack sockets) into plain IPv4 */
+function normalizeIp(ip: string): string
+{
+    const mapped = /^::ffff:(\d{1,3}(\.\d{1,3}){3})$/i.exec(ip);
+    return mapped?mapped[1]:ip;
+}
+
+function ipFamily(ip: string): 'ipv4'|'ipv6'|undefined
+{
+    const version = net.isIP(ip);
+    return version === 4?'ipv4':version === 6?'ipv6':undefined;
+}
+
+/**
+ * Check if an IP address matches a whitelist entry, which is a single address or a CIDR range.
+ * Uses the BlockList of Node.js; addresses and ranges of different families never match.
+ */
+export function ipMatches(clientIp: string, whitelisted: string): boolean
+{
+    const ip = normalizeIp(clientIp);
+    const family = ipFamily(ip);
+    if(!family) return false;
+
+    const list = new net.BlockList();
+    const [address, prefix, ...rest] = whitelisted.split('/');
+    const entryAddress = normalizeIp(address);
+    const entryFamily = ipFamily(entryAddress);
+    if(!entryFamily || entryFamily !== family || rest.length) return false;
+
+    if(prefix === undefined) // A single address
+        list.addAddress(entryAddress, entryFamily);
+    else if(/^\d{1,3}$/.test(prefix) && parseInt(prefix) <= (entryFamily === 'ipv4'?32:128)) // A valid CIDR range
+        list.addSubnet(entryAddress, parseInt(prefix), entryFamily);
+    else // Invalid prefix
+        return false;
+
+    return list.check(ip, family);
+}
 
 export interface IConfig
 {
@@ -122,7 +161,7 @@ export class Config
             throw new InvalidConfig('"requireAuth" enabled without users defined');
         else if(this.#config.receive?.maxSize && (typeof this.#config.receive.maxSize !== 'string' || !/^\d+k|m$/i.test(this.#config.receive.maxSize)))
             throw new InvalidConfig('"maxSize" property is invalid');
-        else if(this.smtpListenIp && !IPCIDR.isValidAddress(this.smtpListenIp))
+        else if(this.smtpListenIp && !net.isIP(this.smtpListenIp))
             throw new InvalidConfig('"listenAddress" property is invalid');
         else if(this.smtpTlsKeyPath && !fs.existsSync(this.smtpTlsKeyPath))
             throw new InvalidConfig(`Key file "${this.smtpTlsKeyPath}" could not be found`);
@@ -348,13 +387,7 @@ export class Config
         {
             for(const whitelisted of this.#config.receive?.ipWhitelist)
             {
-                if(IPCIDR.isValidCIDR(whitelisted)) // It's a CIDR?
-                {
-                    const cidr = new IPCIDR(whitelisted);
-                    if(cidr.contains(clientIp))
-                        return true;
-                }
-                else if(whitelisted === clientIp)
+                if(ipMatches(clientIp, whitelisted))
                     return true;
             }
         }

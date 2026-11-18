@@ -5,8 +5,8 @@ import { SMTPServer as NodeSMTP, SMTPServerOptions } from 'smtp-server';
 import { RateLimiterMemory, RateLimiterRes } from 'rate-limiter-flexible';
 import MailComposer from 'nodemailer/lib/mail-composer';
 import addressparser, { type Address } from 'nodemailer/lib/addressparser';
-const Splitter = require('mailsplit').Splitter;
-const Joiner = require('mailsplit').Joiner;
+const Splitter = require('@zone-eu/mailsplit').Splitter;
+const Joiner = require('@zone-eu/mailsplit').Joiner;
 import { Config } from './Config';
 import { prefixedLog } from './Logger';
 import { MailQueue } from './MailQueue';
@@ -134,7 +134,7 @@ export class SMTPServer
                         if(data.headers.hasHeader('Cc')) visibleRecipients.push(...addressparser(data.headers.get('Cc'), {flatten: true}));
 
                         // Check if there are recipients missing from TO/CC, in that case we add them as BCC
-                        const bcc = envelope.rcptTo.filter(rcpt=>!visibleRecipients.some(visible=>visible.address.toLowerCase()===rcpt.address.toLowerCase()));
+                        const bcc = envelope.rcptTo.filter(rcpt=>!visibleRecipients.some(visible=>visible.address?.toLowerCase()===rcpt.address.toLowerCase()));
                         if(bcc.length) data.headers.add('Bcc', bcc.map(r=>r.address).join(', '));
                     }
                 } catch(error) {

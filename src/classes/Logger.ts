@@ -44,7 +44,7 @@ export function log(level: 'verbose'|'info'|'warn'|'error', msg: string, meta?: 
     }
 
     return new Promise<void>((resolve, reject)=>{
-        logger.log(level, msg, meta, (err)=>{
+        logger.log(level, msg, meta, (err: unknown)=>{
             if(err)
                 console.error('An error occured while logging!', err);
             else if(DEBUG && meta)
