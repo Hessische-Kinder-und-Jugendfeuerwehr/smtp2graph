@@ -1,0 +1,27 @@
+src/classes/Mailer.ts
+  s_8c193e641dbcc6::t_c4d9dc8f237bdd 92-93
+  s_8c193e641dbcc6::t_cca1352aa8284b 9
+  s_8c193e641dbcc6::t_1ed15d770b2857 52-54,56-69
+  s_8c193e641dbcc6::t_ca08adaaa53159 4
+src/classes/Http.ts
+  s_8c193e641dbcc6::t_f5a816e78c3bf5 1,5-15
+  s_8c193e641dbcc6::t_1e2d448849148a 69-103
+test/99misc/03retry.spec.ts
+  s_8c193e641dbcc6::t_9ba7eea80efc79 1-104
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "94df30492fed7e81f354685e693d19e066de845f",
+  "prompts": {},
+  "sessions": {
+    "s_8c193e641dbcc6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8141bb10-49aa-4eef-a14c-536cefb106e5",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "tim.weinhold <tim.weinhold@hkjf.de>"
+    }
+  }
+}
