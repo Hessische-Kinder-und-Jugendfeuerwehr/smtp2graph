@@ -1,0 +1,21 @@
+src/classes/Config.ts
+  s_8c193e641dbcc6::t_920654b30dc9e6 2,10-48,164,390
+test/99misc/05ipwhitelist.spec.ts
+  s_8c193e641dbcc6::t_d3dd16a59e4d20 1-44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4c3859c126d493f712d183e39d918544b9abe604",
+  "prompts": {},
+  "sessions": {
+    "s_8c193e641dbcc6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8141bb10-49aa-4eef-a14c-536cefb106e5",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "tim.weinhold <tim.weinhold@hkjf.de>"
+    }
+  }
+}
