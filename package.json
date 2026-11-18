@@ -59,7 +59,6 @@
     "axios": "^1.18.1",
     "base64-stream": "^1.0.0",
     "chokidar": "^3.5.3",
-    "ip-cidr": "^4.0.0",
     "mailsplit": "^5.4.0",
     "nodemailer": "^9.0.3",
     "rate-limiter-flexible": "^4.0.0",
