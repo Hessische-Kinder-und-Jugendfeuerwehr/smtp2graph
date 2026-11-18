@@ -2,12 +2,21 @@ import fs from 'fs';
 import path from 'path';
 import chokidar from 'chokidar';
 import { Mutex } from 'async-mutex';
-import { Mailer } from './Mailer';
+import { Mailer, MailboxAccessDenied } from './Mailer';
 import { prefixedLog } from './Logger';
 import { Config } from './Config';
 import { UnrecoverableError } from './Constants';
 
 const log = prefixedLog('MailQueue');
+
+/**
+ * Decide whether sending a message should be tried again.
+ * Graph also answers "access denied" during outages, so that error is retried as well (#73).
+ */
+export function shouldRetry(error: unknown): boolean
+{
+    return !(error instanceof UnrecoverableError) || error instanceof MailboxAccessDenied;
+}
 
 export class MailQueue
 {
@@ -66,8 +75,10 @@ export class MailQueue
             this.#removeFromRetryQueue(filename);
         } catch(error) {
             log('error', `Failed to send message "${filename}"`, {error, filename});
-            if(!(error instanceof UnrecoverableError))
+            if(shouldRetry(error))
                 this.#addToRetryQueue(filename);
+            else // Trying again won't help, so don't leave the message in the queue
+                this.#moveToFailed(filename);
         }
     }
 
@@ -77,14 +88,7 @@ export class MailQueue
         {
             const data = this.#retryQueue.get(filename);
             if(data && data.retryCount >= Config.sendRetryLimit) // This file is already in the queue and exceeded the retry limit?
-            {
-                try {
-                    this.#retryQueue.delete(filename); // Remove from queue
-                    fs.renameSync(path.join(this.#queuePath, filename), path.join(this.#failedPath, filename)); // Move to failed dir
-                } catch(error) {
-                    log('error', `Error moving file "${filename}" from queue to failed dir`, {error, filename});
-                }
-            }
+                this.#moveToFailed(filename);
             else // This file should be retried
             {
                 const retryAfter = new Date();
@@ -95,6 +99,18 @@ export class MailQueue
             // Start/stop the queue if necessary
             this.#startStopRetryQueue();
         }
+    }
+
+    /** Move a message that can't be delivered from the queue to the failed folder */
+    #moveToFailed(filename: string)
+    {
+        try {
+            fs.renameSync(path.join(this.#queuePath, filename), path.join(this.#failedPath, filename));
+            log('warn', `Moved "${filename}" to the failed folder`, {filename});
+        } catch(error) {
+            log('error', `Error moving file "${filename}" from queue to failed dir`, {error, filename});
+        }
+        this.#removeFromRetryQueue(filename);
     }
 
     #removeFromRetryQueue(filename: string)
