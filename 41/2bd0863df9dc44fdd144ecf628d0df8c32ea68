@@ -1,0 +1,23 @@
+test/99misc/04mailqueue.spec.ts
+  s_8c193e641dbcc6::t_6c6a6d10480bea 40-43
+  s_8c193e641dbcc6::t_e98d83bf25c224 1-21,25-39,44-94
+  s_8c193e641dbcc6::t_54f66c61f9d321 22-24
+src/classes/MailQueue.ts
+  s_8c193e641dbcc6::t_aeaeccd064ece2 5,12-20,78,80-81,91,104-115
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "412bd0863df9dc44fdd144ecf628d0df8c32ea68",
+  "prompts": {},
+  "sessions": {
+    "s_8c193e641dbcc6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8141bb10-49aa-4eef-a14c-536cefb106e5",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "tim.weinhold <tim.weinhold@hkjf.de>"
+    }
+  }
+}
